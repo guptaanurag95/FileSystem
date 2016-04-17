@@ -40,19 +40,24 @@ int intialize(){
 }
 
 int assigneTables(){
+
 	char buf[2050];
 	block_read(0,buf);
 	super = (superBlock *) buf;
 	
 	for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(fatTable)); ++i){
 		block_read(super->startFatTable +i, buf);
-		table + i*(BLOCK_SIZE/sizeof(fatTable)) = (fatTable *)buf;
+		fatTable *temp;
+		temp= table + i*(BLOCK_SIZE/sizeof(fatTable));
+		temp = (fatTable *)buf;
 	}
 
 	if(super->numberOfFiles != 0){
 		for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(directory)); ++i){
 			block_read(super->startDirectoryBlock +i, buf);
-			DirectoryTable + i*(BLOCK_SIZE/sizeof(directory)) = (directory *)buf;
+			directory *temp1;
+			temp1=DirectoryTable + i*(BLOCK_SIZE/sizeof(directory));
+			temp1= (directory *)buf;
 			if(super->numberOfFiles <= i*(BLOCK_SIZE/sizeof(directory)))
 				break;
 		}
@@ -60,6 +65,7 @@ int assigneTables(){
 	
 	valueAssigned = 1;
 }
+
 
 int saveTables(){
 	block_write(0,(char *)super);
@@ -75,6 +81,7 @@ int saveTables(){
 			break;
 	}
 }
+
 
 int fCreate(char *name){			//returns 1 or 0
 	char temp[15];
