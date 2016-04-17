@@ -69,6 +69,7 @@ int assignTables(){
 		fatTable *temp;
 		temp= table + i*(BLOCK_SIZE/sizeof(fatTable));
 		memcpy(temp, buf, BLOCK_SIZE);
+		cout<<table[i].blockContent<<"=====\n";
 	}
 
 	cout<<"\nSDF"<<super.numberOfFiles<<"\n";
