@@ -1,55 +1,55 @@
 # FileSystem
-For OS Project. 
+OS Project is on FAT FileSystem.
 
-FAT FileSystem
+File attributes are:
 
-File attributes
+      startBlock
 
-startBlock
-
-fileName
+      fileName
 
 
-Functions implemented
+Functions implemented are:
 
-create
+      create
 
-delete
+      delete
 
-open
+      open
 
-close
+      close
 
-read
+      read
 
-write
+      write
 
-rename
+      rename
 
-list of file
-
-
-Structure of file system
-
-super block 	====			address of directory and fat table and start of data blocks
-
-directory		====			file names, and its attributes
-
-fat table
-
-data blocks
+      list of file
 
 
-Total size = 21504 Kbytes = 21 mb
+Structure of file system is:
 
-Block Size = 2048 bytes
+      super block   :   address of directory and fat table and start of data blocks
 
-number of blocks = 10752
+      directory     :	file names, and its attributes
 
-superblock = 0th blocks
+      fat table
 
-fat table = 1-16 blocks
+      data blocks
 
-directory = 17 - 511
+
+Size of the virtual disk and its partions:
+
+      Total size = 21504 Kbytes = 21 mb
+
+      Block Size = 2048 bytes
+
+      number of blocks = 10752
+
+      superblock = 0th blocks
+
+      fat table = 1-20 blocks
+
+      directory = 30 - 511
 
 Maximum 32 files can be opened at a given time.
