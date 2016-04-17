@@ -5,7 +5,6 @@
 #define DISK_BLOCKS  10752
 #define BLOCK_SIZE   2048
 #define DATA_BLOCKS  10240
-#define NUMBER_FAT__TABLE_BLOCKS (sizeof(fatTable)*DATA_BLOCKS)/BLOCK_SIZE
 
 superBlock *super;
 fatTable table[DATA_BLOCKS];
@@ -15,7 +14,7 @@ int valueAssigned = 0;
 int intialize(){
 	char temp[15];
 	strcpy(temp,"virtual_disk");
-	close_disk(temp);
+	close_disk();
 
 	make_disk(temp);
 
@@ -34,9 +33,9 @@ int intialize(){
 	block_write(0,(char *)&super);
 	for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(fatTable)); ++i)
 	{
-		block_write(super.startFatTable+i,(char *)(table+i*(BLOCK_SIZE/sizeof(fatTable)));
+		block_write(super.startFatTable+i,(char *)(table+i*(BLOCK_SIZE/sizeof(fatTable))));
 	}
-	close_disk(temp);
+	close_disk();
 	return 1;
 }
 
@@ -49,15 +48,42 @@ int assigneTables(){
 		block_read(super->startFatTable +i, buf);
 		table + i*(BLOCK_SIZE/sizeof(fatTable)) = (fatTable *)buf;
 	}
+
+	if(super->numberOfFiles != 0){
+		for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(directory)); ++i){
+			block_read(super->startDirectoryBlock +i, buf);
+			DirectoryTable + i*(BLOCK_SIZE/sizeof(directory)) = (directory *)buf;
+			if(super->numberOfFiles <= i*(BLOCK_SIZE/sizeof(directory)))
+				break;
+		}
+	}
+	
 	valueAssigned = 1;
+}
+
+int saveTables(){
+	block_write(0,(char *)super);
+	
+	for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(fatTable)); ++i)
+	{
+		block_write(super->startFatTable+i,(char *)(table+i*(BLOCK_SIZE/sizeof(fatTable))));
+	}
+
+	for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(directory)); ++i){
+		block_read(super->startDirectoryBlock +i, (char *)(DirectoryTable + i*(BLOCK_SIZE/sizeof(directory))));
+		if(super->numberOfFiles <= i*(BLOCK_SIZE/sizeof(fatTable)))
+			break;
+	}
 }
 
 int fCreate(char *name){			//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
-	close_disk(temp);
+	close_disk();
 	if(isDiskCreated(temp)==-1)
 		intialize();
+
+	open_disk(temp);
 	if(valueAssigned==0)
 		assigneTables();
 
@@ -66,53 +92,36 @@ int fCreate(char *name){			//returns 1 or 0
 		currentIndex++;
 	}
 	if(currentIndex==DATA_BLOCKS)
-		return -1;
-	table[currentIndex].blockContent=-1;
+		return 0;
 	
+	table[currentIndex].blockContent = -1;
+
+	strcpy(DirectoryTable[super->numberOfFiles].fileName,name);
+	DirectoryTable[super->numberOfFiles].startBlock = currentIndex;
+	DirectoryTable[super->numberOfFiles].numberBlocks = 1;
+	DirectoryTable[super->numberOfFiles].valid = 1;
+	super->numberOfFiles++;
+	return 1;
 }
 
-int fCreate(char *name){			//returns 1 or 0
+int fRemove(char *name){			//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
-	close_disk(temp);
+	close_disk();
 	if(isDiskCreated(temp)==-1)
 		intialize();
 
-	char buf[2050];
+	open_disk(temp);
+	if(valueAssigned==0)
+		assigneTables();
 
-	block_read(0,buf);
-	superBlock *super;
-	super = (superBlock *) buf;
+	for(int i=0;i<super->numberOfFiles;i++){
+		if(strcasecmp(name,DirectoryTable[super->numberOfFiles + i].fileName)==0){
+			DirectoryTable[super->startFatTable + i].valid = 0;
 
-	block_read(super->startFatTable,buf);
-	fatTable *table;
-	table = (fatTable *) buf;
-	int currentIndex = 1;
-	while(currentIndex<=DATA_BLOCKS && table->blockContent!=-2){
-		currentIndex++;
-		table++;
+		}
 	}
-	if(currentIndex==DATA_BLOCKS+1)
-		return -1;
-
-	int blockNumber = super->startFatTable + (currentIndex*sizeof(fatTable))/BLOCK_SIZE - 1;
-	if((currentIndex%(BLOCK_SIZE/sizeof(fatTable)))!=0)
-		blockNumber++;
-
-	block_read(blockNumber,buf);
-	fatTable *table1;
-	table1 = (fatTable *)buf;
-	if((currentIndex%(BLOCK_SIZE/sizeof(fatTable)))==0)
-		table1 = table1 + ((BLOCK_SIZE/sizeof(fatTable))-2);
-	else table1 = table1 + (currentIndex%(BLOCK_SIZE/sizeof(fatTable))) - 1;
-	table1->blockContent = -1;
-	block_write(blockNumber,buf);
-
-	block_read(super->startDirectoryBlock,buf);
-	super->numberOfFiles
 }
-
-int fRemove(char *name);			//returns 1 or 0
 
 int fOpen(char *name, char* permissions);			//returns -1 or unique fileDescriptor
 int fClose(char *name);			//returns -1 or unique fileDescriptor
