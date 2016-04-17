@@ -182,13 +182,11 @@ int fRemove(char *name){			//returns 1 or 0
 	}
 }
 
-int fOpen(char *name, char* permissions)			//returns -1 or unique fileDescriptor
-{
-	int i;
+int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescriptor
+	int i,j=0;
 	for(i=0;i<super.numberOfFiles;i++)
 		if(strcasecmp(name,DirectoryTable[i].fileName)==0)
 		{
-			int j=0;
 			for(j=0;j<TOTAL_FILE_DESCRIPTOR;j++)
 			{
 				if(Descriptor[j].valid==1)
@@ -206,22 +204,35 @@ int fOpen(char *name, char* permissions)			//returns -1 or unique fileDescriptor
 			}
 			break;
 		} 
-	
+	if(j==TOTAL_FILE_DESCRIPTOR || i==super.numberOfFiles)
+		return -1;
+	return j;
 }
 
-int fClose(char *name)			//returns -1 or unique fileDescriptor
-{	
-	for(i=0;i<TOTAL_FILE_DESCRIPTOR;i++)
-		if(strcasecmp(name,Descriptor[i].fileName)==0){
-			Descriptor[i].valid = 0
-		}
+int fClose(int descriptor){			//returns -1 or 1	
+	if(Descriptor[descriptor].valid == 1){
+		Descriptor[descriptor].valid = 0;
+		return 1;
+	}
+	return -1;
 }
 
 int fRead(int fDescriptor, char *buf, int size){			//returns 1 or 0
 
 }
 
-int fWrite(int fDescriptor, char *buf, int size);			//returns 1 or 0
+int fWrite(int fDescriptor, char *buf, int size){			//returns 1 or 0
+	// if((Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr + 1)<BLOCK_SIZE){
+		int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr + 1);
+		if(sizeLeft<=size){
+			strcpy(Descriptor[descriptor].currentptr,buf);
+		}
+		else{
+			
+		}
+	// }
+	// return 0;
+}
 
 int fRename(char *oldName, char *newName)		//returns 1 or 0
 {
