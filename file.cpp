@@ -20,7 +20,6 @@ int intialize(){
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 
-
 	make_disk(temp);
 
 	superBlock super;
@@ -129,19 +128,34 @@ int saveTables(){
 int fCreate(char *name){			//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
+	if(isDiskCreated(temp)==-1)
+		intialize();
 	close_disk();
 
 	open_disk(temp);
 	if(valueAssigned==0)
 		assignTables();
+	
+	int i;
+	for(i=0;i<super.numberOfFiles;i++)
+		if(strcasecmp(name,DirectoryTable[i].fileName)==0 && DirectoryTable[i].valid==1)
+		{
+			break;
+		}
+	if(i<super.numberOfFiles){
+		saveTables();
+		return 0;
+	}
 
 	int currentIndex = 0;
 	while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
 
 		currentIndex++;
 	}
-	if(currentIndex==DATA_BLOCKS)
+	if(currentIndex==DATA_BLOCKS){
+		saveTables();
 		return 0;
+	}
 	
 	table[currentIndex].blockContent = -1;
 
@@ -150,12 +164,15 @@ int fCreate(char *name){			//returns 1 or 0
 	DirectoryTable[super.numberOfFiles].numberBlocks = 1;
 	DirectoryTable[super.numberOfFiles].valid = 1;
 	super.numberOfFiles++;
+	saveTables();
 	return 1;
 }
 
 int fRemove(char *name){			//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
+	if(isDiskCreated(temp)==-1)
+		intialize();
 	close_disk();
 
 	open_disk(temp);
@@ -163,20 +180,34 @@ int fRemove(char *name){			//returns 1 or 0
 		assignTables();
 
 	for(int i=0;i<super.numberOfFiles;i++){
-		if(strcasecmp(name,DirectoryTable[i].fileName)==0){
-			DirectoryTable[i].valid = -1;
-			int startDataBlock = DirectoryTable[i].startBlock;
-			while(startDataBlock!=-1){
+		if(strcasecmp(name,DirectoryTable[i].fileName)==0 && DirectoryTable[i].valid==1){
+			DirectoryTable[i].valid = 0;
+			int startDataBlock = DirectoryTable[i].startBlock - super.startDataBlock;
+			while(table[startDataBlock].blockContent!=-1){
 				int temp = table[startDataBlock].blockContent;
 				table[startDataBlock].blockContent = -2;
 				startDataBlock = temp;
 			}
+			saveTables();
+			return 1;
 			break;
 		}
 	}
+	saveTables();
+	return 0;
 }
 
 int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescriptor
+	char temp[15];
+	strcpy(temp,"virtual_disk");
+	if(isDiskCreated(temp)==-1)
+		intialize();
+	close_disk();
+
+	open_disk(temp);
+	if(valueAssigned==0)
+		assignTables();
+
 	int i,j=0;
 	for(i=0;i<super.numberOfFiles;i++)
 		if(strcasecmp(name,DirectoryTable[i].fileName)==0)
@@ -198,25 +229,30 @@ int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescripto
 				}
 			}
 			break;
-		} 
+		}
+	saveTables();
 	if(j==TOTAL_FILE_DESCRIPTOR || i==super.numberOfFiles)
 		return -1;
 
 	return j;
 }
 
-int fClose(int descriptor){			//returns -1 or 1	
+int fClose(int descriptor){			//returns -1 or 1
 	if(Descriptor[descriptor].valid == 1){
 		block_write(Descriptor[descriptor].currentBlock, Descriptor[descriptor].ptr);
 		Descriptor[descriptor].valid = 0;
+		saveTables();
 		return 1;
 	}
+	saveTables();
 	return -1;
 }
 
 int fRead(int descriptor, char *buf, int size){			//returns 1 or 0
-	if(Descriptor[descriptor].valid != 1 || !(Descriptor[descriptor].mode[0]=='r' || Descriptor[descriptor].mode[1]=='r'))
+	if(Descriptor[descriptor].valid != 1 || !(Descriptor[descriptor].mode[0]=='r' || Descriptor[descriptor].mode[1]=='r')){
+		saveTables();
 		return 0;
+	}
 	
 	int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr);
 	if(size<=sizeLeft){
@@ -226,6 +262,7 @@ int fRead(int descriptor, char *buf, int size){			//returns 1 or 0
 		}
 
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + size;
+		saveTables();
 		return 1;
 	}
 	else{
@@ -237,6 +274,7 @@ int fRead(int descriptor, char *buf, int size){			//returns 1 or 0
 		int temp = Descriptor[descriptor].currentBlock - super.startDataBlock;
 		if(table[temp].blockContent==-1){
 			Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + sizeLeft;
+			saveTables();
 			return 1;
 		}
 		Descriptor[descriptor].currentBlock = table[temp].blockContent + super.startDataBlock;
@@ -247,18 +285,22 @@ int fRead(int descriptor, char *buf, int size){			//returns 1 or 0
 			buf[i] = Descriptor[descriptor].currentptr[i-sizeLeft];
 		}
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft);
+		saveTables();
 		return 1;
 	}
 }
 
 int fWrite(int descriptor, char *buf, int size){			//returns 1 or 0
-	if(Descriptor[descriptor].valid != 1 || !(Descriptor[descriptor].mode[0]=='w' || Descriptor[descriptor].mode[1]=='w'))
+	if(Descriptor[descriptor].valid != 1 || !(Descriptor[descriptor].mode[0]=='w' || Descriptor[descriptor].mode[1]=='w')){
+		saveTables();
 		return 0;
+	}
 	int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr);
 
 	if(size<=sizeLeft){
 		strcpy(Descriptor[descriptor].currentptr,buf);
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + size;
+		saveTables();
 		return 1;
 	}
 	else{
@@ -275,8 +317,10 @@ int fWrite(int descriptor, char *buf, int size){			//returns 1 or 0
 			while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
 				currentIndex++;
 			}
-			if(currentIndex==DATA_BLOCKS)
+			if(currentIndex==DATA_BLOCKS){
+				saveTables();
 				return 0;
+			}
 
 			table[temp].blockContent = currentIndex;
 			table[currentIndex].blockContent = -1;
@@ -290,16 +334,40 @@ int fWrite(int descriptor, char *buf, int size){			//returns 1 or 0
 			Descriptor[descriptor].currentptr[i-sizeLeft] = buf[i];
 		}
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft);
+		saveTables();
 		return 1;
 	}
 }
 
 int fRename(char *oldName, char *newName)		//returns 1 or 0
 {
+	char temp[15];
+	strcpy(temp,"virtual_disk");
+	if(isDiskCreated(temp)==-1)
+		intialize();
+	close_disk();
+
+	open_disk(temp);
+	if(valueAssigned==0)
+		assignTables();
+
 	int i;
 	for(i=0;i<super.numberOfFiles;i++)
-		if(strcasecmp(oldName,DirectoryTable[i].fileName)==0)
-			strcpy(DirectoryTable[i].fileName,newName);  
+		if(strcasecmp(newName,DirectoryTable[i].fileName)==0 && DirectoryTable[i].valid==1)
+		{
+			break;
+		}
+	if(i<super.numberOfFiles){
+		saveTables();
+		return 0;
+	}
+
+	for(i=0;i<super.numberOfFiles;i++)
+		if(strcasecmp(oldName,DirectoryTable[i].fileName)==0 && DirectoryTable[i].valid==1){
+			strcpy(DirectoryTable[i].fileName,newName);
+			break;
+		}
+	saveTables();
 	if(i<super.numberOfFiles)
 		return 1;
 	if(i>=super.numberOfFiles)
@@ -308,17 +376,24 @@ int fRename(char *oldName, char *newName)		//returns 1 or 0
 
 int fList()				//return -1 or number of files
 {
+	char temp[15];
+	strcpy(temp,"virtual_disk");
+	if(isDiskCreated(temp)==-1)
+		intialize();
+	close_disk();
+
+	open_disk(temp);
+	if(valueAssigned==0)
+		assignTables();
 
 	int list_index = 0, i;
-
 	for(i=0;i<super.numberOfFiles;i++){
-
 		if(DirectoryTable[i].valid == 1){
-
 			cout<<DirectoryTable[i].fileName<<"\n";
 			list_index++;
 		}
 	}
+	saveTables();
 	if(list_index==0)
 		return -1;
 	else

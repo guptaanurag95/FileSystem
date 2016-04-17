@@ -10,16 +10,9 @@ static int handle;
 
 int isDiskCreated(char *name)
 {
-  int f, cnt;
-  char buf[BLOCK_SIZE];
-
-  if ((f = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
-    perror("make_disk: cannot open file");
-    return -1;
-  }
-  close(f);
-  return 1;
-
+  if( access( name, F_OK ) != -1 )
+    return 1;
+  return -1;
 }
 
 int make_disk(char *name)
@@ -27,8 +20,7 @@ int make_disk(char *name)
   int f, cnt;
   char buf[BLOCK_SIZE];
 
-  if ((f = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
-    perror("make_disk: cannot open file");
+  if ((f = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {    
     return -1;
   }
 
@@ -46,12 +38,10 @@ int open_disk(char *name)
   int f;
 
   if (active) {
-    fprintf(stderr, "open_disk: disk is already open\n");
     return -1;
   }
   
   if ((f = open(name, O_RDWR, 0644)) < 0) {
-    perror("open_disk: cannot open file");
     return -1;
   }
 
@@ -64,7 +54,6 @@ int open_disk(char *name)
 int close_disk()
 {
   if (!active) {
-    fprintf(stderr, "close_disk: no open disk\n");
     return -1;
   }
   
@@ -78,22 +67,18 @@ int close_disk()
 int block_write(int block, char *buf)
 {
   if (!active) {
-    fprintf(stderr, "block_write: disk not active\n");
     return -1;
   }
 
   if ((block < 0) || (block >= DISK_BLOCKS)) {
-    fprintf(stderr, "block_write: block index out of bounds\n");
     return -1;
   }
 
   if (lseek(handle, block * BLOCK_SIZE, SEEK_SET) < 0) {
-    perror("block_write: failed to lseek");
     return -1;
   }
 
   if (write(handle, buf, BLOCK_SIZE) < 0) {
-    perror("block_write: failed to write");
     return -1;
   }
 
@@ -103,22 +88,18 @@ int block_write(int block, char *buf)
 int block_read(int block, char *buf)
 {
   if (!active) {
-    fprintf(stderr, "block_read: disk not active\n");
     return -1;
   }
 
   if ((block < 0) || (block >= DISK_BLOCKS)) {
-    fprintf(stderr, "block_read: block index out of bounds\n");
     return -1;
   }
 
   if (lseek(handle, block * BLOCK_SIZE, SEEK_SET) < 0) {
-    perror("block_read: failed to lseek");
     return -1;
   }
 
   if (read(handle, buf, BLOCK_SIZE) < 0) {
-    perror("block_read: failed to read");
     return -1;
   }
   return 0;
