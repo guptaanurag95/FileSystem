@@ -12,7 +12,7 @@ struct superBlock{
 };
 
 struct fatTable{
-	unsigned short int blockContent;
+	short int blockContent;
 	// empty block = -2
 	// end of file = -1
 	// else index of next block
@@ -35,7 +35,7 @@ struct fileDescriptor{
 };
 
 int intialize();
-int assigneTables();
+int assignTables();
 int saveTables();
 
 int fCreate(char *name);			//returns 1 or 0
@@ -48,6 +48,6 @@ int fRead(int fDescriptor, char *buf, int size);			//returns 1 or 0
 int fWrite(int fDescriptor, char *buf, int size);			//returns 1 or 0
 
 int fRename(char *oldName, char *newName);			//returns 1 or 0
-int fList(char **list);					//return -1 or number of files
+int fList();					//return -1 or number of files
 
 #endif
