@@ -35,6 +35,8 @@ struct fileDescriptor{
 };
 
 int intialize();
+int assigneTables();
+int saveTables();
 
 int fCreate(char *name);			//returns 1 or 0
 int fRemove(char *name);			//returns 1 or 0
