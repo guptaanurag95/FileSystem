@@ -30,7 +30,8 @@ struct fileDescriptor{
 	char fName[20];
 	char mode[2];			// r or w or rw
 	unsigned short int currentBlock;
-	int offset;
+	char *ptr;
+	int valid = 0;
 };
 
 int intialize();

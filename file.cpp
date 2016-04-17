@@ -9,6 +9,8 @@
 superBlock *super;
 fatTable table[DATA_BLOCKS];
 directory DirectoryTable[DATA_BLOCKS];
+fileDescriptor Descriptor[33];
+int numberofOpenFiles = 0;
 int valueAssigned = 0;
 
 int intialize(){
@@ -135,7 +137,24 @@ int fRemove(char *name){			//returns 1 or 0
 	}
 }
 
-int fOpen(char *name, char* permissions);			//returns -1 or unique fileDescriptor
+int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescriptor
+	char temp[15];
+	strcpy(temp,"virtual_disk");
+	close_disk();
+	if(isDiskCreated(temp)==-1)
+		intialize();
+
+	open_disk(temp);
+	if(valueAssigned==0)
+		assigneTables();
+
+	for(int i=0;i<super->numberOfFiles;i++){
+		if(strcasecmp(name,DirectoryTable[i].fileName)==0){
+			break;
+		}
+	}
+}
+
 int fClose(char *name);			//returns -1 or unique fileDescriptor
 
 
