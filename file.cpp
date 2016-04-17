@@ -39,6 +39,7 @@ int intialize(){
 	return 1;
 }
 
+
 int assignTables(){
 	char buf[2050];
 	block_read(0,buf);
@@ -46,13 +47,17 @@ int assignTables(){
 	
 	for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(fatTable)); ++i){
 		block_read(super->startFatTable +i, buf);
-		table + i*(BLOCK_SIZE/sizeof(fatTable)) = (fatTable *)buf;
+		fatTable *temp;
+		temp= table + i*(BLOCK_SIZE/sizeof(fatTable));
+		temp = (fatTable *)buf;
 	}
 
 	if(super->numberOfFiles != 0){
 		for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(directory)); ++i){
 			block_read(super->startDirectoryBlock +i, buf);
-			DirectoryTable + i*(BLOCK_SIZE/sizeof(directory)) = (directory *)buf;
+			directory *temp1;
+			temp1=DirectoryTable + i*(BLOCK_SIZE/sizeof(directory));
+			temp1= (directory *)buf;
 			if(super->numberOfFiles <= i*(BLOCK_SIZE/sizeof(directory)))
 				break;
 		}
@@ -60,6 +65,7 @@ int assignTables(){
 	
 	valueAssigned = 1;
 }
+
 
 int saveTables(){
 	block_write(0,(char *)super);
@@ -75,6 +81,7 @@ int saveTables(){
 			break;
 	}
 }
+
 
 int fCreate(char *name){			//returns 1 or 0
 	char temp[15];
@@ -117,9 +124,14 @@ int fRemove(char *name){			//returns 1 or 0
 		assignTables();
 
 	for(int i=0;i<super->numberOfFiles;i++){
-		if(strcasecmp(name,DirectoryTable[super->numberOfFiles + i].fileName)==0){
-			DirectoryTable[super->startFatTable + i].valid = 0;
-
+		if(strcasecmp(name,DirectoryTable[i].fileName)==0){
+			DirectoryTable[i].valid = 0;
+			int startDataBlock = DirectoryTable[i].startBlock;
+			while(startDataBlock!=-1){
+				int temp = table[startDataBlock].blockContent;
+				table[startDataBlock].blockContent = -2;
+				startDataBlock = temp;
+			}
 		}
 	}
 }
