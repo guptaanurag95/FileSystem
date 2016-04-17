@@ -19,7 +19,7 @@ struct fatTable{
 };
 
 struct directory{
-	char fileName[20];
+	char fileName[22];
 	unsigned short int startBlock;
 	int numberBlocks;
 	int valid;
@@ -30,6 +30,7 @@ struct fileDescriptor{ //range from 0 to 31
 	char mode[2];			// r or w or rw
 	unsigned short int currentBlock;
 	char *ptr;
+	char *currentptr;
 	int valid = 0;
 };
 
