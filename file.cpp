@@ -19,7 +19,7 @@ int valueAssigned = 0;
 int intialize(){
 	char temp[15];
 	strcpy(temp,"virtual_disk");
-	// close_disk();
+
 
 	make_disk(temp);
 
@@ -32,7 +32,7 @@ int intialize(){
 	fatTable table[DATA_BLOCKS];
 	for(int i=0;i<DATA_BLOCKS;i++){
 		table[i].blockContent = -2;
-		// cout<<temp->blockContent<<"ASD\n";
+
 	}
 
 	char buffer[BLOCK_SIZE];
@@ -61,8 +61,6 @@ int intialize(){
 		memset(buffer, 0, BLOCK_SIZE);
 		memcpy(buffer, (directoryTable+i*(BLOCK_SIZE/sizeof(directory))), BLOCK_SIZE);		
 		block_write(super.startDirectoryBlock +i, buffer);
-		// if(super.numberOfFiles <= i*(BLOCK_SIZE/sizeof(fatTable)))
-		// 	break;
 	}
 	close_disk();
 	return 1;
@@ -98,8 +96,6 @@ int assignTables(){
 			directory *temp1;
 			temp1=DirectoryTable + i*(BLOCK_SIZE/sizeof(directory));
 			memcpy(temp1, buf, BLOCK_SIZE);
-			// if(super.numberOfFiles <= i*(BLOCK_SIZE/sizeof(directory)))
-			// 	break;
 		}
 	}
 	
@@ -135,17 +131,13 @@ int fCreate(char *name){			//returns 1 or 0
 	strcpy(temp,"virtual_disk");
 	close_disk();
 
-	//-------- Inititalise-----------
-	//if(isDiskCreated(temp)==-1)
-//		intialize();
-
 	open_disk(temp);
 	if(valueAssigned==0)
 		assignTables();
-	// ------------------------------
+
 	int currentIndex = 0;
 	while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
-		// cout<<table[currentIndex].blockContent<<"\n";
+
 		currentIndex++;
 	}
 	if(currentIndex==DATA_BLOCKS)
@@ -154,7 +146,7 @@ int fCreate(char *name){			//returns 1 or 0
 	table[currentIndex].blockContent = -1;
 
 	strcpy(DirectoryTable[super.numberOfFiles].fileName,name);
-	DirectoryTable[super.numberOfFiles].startBlock = currentIndex;
+	DirectoryTable[super.numberOfFiles].startBlock = currentIndex + super.startDataBlock;
 	DirectoryTable[super.numberOfFiles].numberBlocks = 1;
 	DirectoryTable[super.numberOfFiles].valid = 1;
 	super.numberOfFiles++;
@@ -165,8 +157,6 @@ int fRemove(char *name){			//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	close_disk();
-	//if(isDiskCreated(temp)==-1)
-//		intialize();
 
 	open_disk(temp);
 	if(valueAssigned==0)
@@ -193,26 +183,25 @@ int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescripto
 		{
 			for(j=0;j<TOTAL_FILE_DESCRIPTOR;j++)
 			{
-				cout<<"ASDFASFDASDFR#@\n";
 				if(Descriptor[j].valid==0)
 				{
-					cout<<"ASDFASFDASDFR#@=====\n";
-					// if(!strcasecmp("a",permissions)){
+
 						strcpy(Descriptor[j].fName,name);
 						strcpy(Descriptor[j].mode,permissions);
 						Descriptor[j].currentBlock = DirectoryTable[i].startBlock;
+
 						block_read(DirectoryTable[i].startBlock,Descriptor[j].ptr);
 						Descriptor[j].currentptr = Descriptor[j].ptr;
 						Descriptor[j].valid = 1;
 						break;	
-					// }
+
 				}
 			}
 			break;
 		} 
-	if(j>=TOTAL_FILE_DESCRIPTOR || i>=super.numberOfFiles)
+	if(j==TOTAL_FILE_DESCRIPTOR || i==super.numberOfFiles)
 		return -1;
-	// cout<<j;
+
 	return j;
 }
 
@@ -230,38 +219,34 @@ int fRead(int descriptor, char *buf, int size){			//returns 1 or 0
 		return 0;
 	
 	int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr);
-	if(sizeLeft<=size){
-		for(int i=0;i<=size;i++){
+	if(size<=sizeLeft){
+		int i;
+		for(i=0;i<=size;i++){
 			buf[i] = Descriptor[descriptor].currentptr[i];
 		}
+
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + size;
 		return 1;
 	}
 	else{
-		for(int i=0;i<=sizeLeft;i++){
+		int i;
+		for(i=0;i<sizeLeft;i++){
 			buf[i] = Descriptor[descriptor].currentptr[i];
 		}
 
-		int temp = Descriptor[descriptor].currentBlock;
-		while(table[temp].blockContent!=-1){
-			temp = table[temp].blockContent;
+		int temp = Descriptor[descriptor].currentBlock - super.startDataBlock;
+		if(table[temp].blockContent==-1){
+			Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + sizeLeft;
+			return 1;
 		}
+		Descriptor[descriptor].currentBlock = table[temp].blockContent + super.startDataBlock;
 
-		int currentIndex = 0;
-		while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
-			currentIndex++;
-		}
-		if(currentIndex==DATA_BLOCKS)
-			return 0;
-		
-		table[temp].blockContent = -1;
-		Descriptor[descriptor].currentBlock = temp;
 		block_read(Descriptor[descriptor].currentBlock,Descriptor[descriptor].ptr);
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].ptr;
-		for(int i=sizeLeft+1;i<=size;i++){
-			buf[i] = Descriptor[descriptor].currentptr[i];
+		for(i=sizeLeft;i<=size;i++){
+			buf[i] = Descriptor[descriptor].currentptr[i-sizeLeft];
 		}
-		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft + 1);
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft);
 		return 1;
 	}
 }
@@ -269,40 +254,42 @@ int fRead(int descriptor, char *buf, int size){			//returns 1 or 0
 int fWrite(int descriptor, char *buf, int size){			//returns 1 or 0
 	if(Descriptor[descriptor].valid != 1 || !(Descriptor[descriptor].mode[0]=='w' || Descriptor[descriptor].mode[1]=='w'))
 		return 0;
-
 	int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr);
-	if(sizeLeft<=size){
+
+	if(size<=sizeLeft){
 		strcpy(Descriptor[descriptor].currentptr,buf);
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + size;
 		return 1;
 	}
 	else{
-		for(int i=0;i<=sizeLeft;i++){
+		for(int i=0;i<sizeLeft;i++){
 			Descriptor[descriptor].currentptr[i] = buf[i];
 		}
 
 		block_write(Descriptor[descriptor].currentBlock, Descriptor[descriptor].ptr);
 
-		int temp = Descriptor[descriptor].currentBlock;
-		while(table[temp].blockContent!=-1){
-			temp = table[temp].blockContent;
-		}
+		int temp = Descriptor[descriptor].currentBlock - super.startDataBlock;
 
-		int currentIndex = 0;
-		while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
-			currentIndex++;
+		if(table[temp].blockContent==-1){
+			int currentIndex = 0;
+			while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
+				currentIndex++;
+			}
+			if(currentIndex==DATA_BLOCKS)
+				return 0;
+
+			table[temp].blockContent = currentIndex;
+			table[currentIndex].blockContent = -1;
+			Descriptor[descriptor].currentBlock = temp + super.startDataBlock;	
 		}
-		if(currentIndex==DATA_BLOCKS)
-			return 0;
+		Descriptor[descriptor].currentBlock = table[temp].blockContent + super.startDataBlock;	
 		
-		table[temp].blockContent = -1;
-		Descriptor[descriptor].currentBlock = temp;
 		block_read(Descriptor[descriptor].currentBlock,Descriptor[descriptor].ptr);
 		Descriptor[descriptor].currentptr = Descriptor[descriptor].ptr;
-		for(int i=sizeLeft+1;i<=size;i++){
-			Descriptor[descriptor].currentptr[i] = buf[i];
+		for(int i=sizeLeft;i<=size;i++){
+			Descriptor[descriptor].currentptr[i-sizeLeft] = buf[i];
 		}
-		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft + 1);
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft);
 		return 1;
 	}
 }
@@ -321,13 +308,13 @@ int fRename(char *oldName, char *newName)		//returns 1 or 0
 
 int fList()				//return -1 or number of files
 {
-	// cout<<"ASDF\n";
+
 	int list_index = 0, i;
-	// cout<<super.numberOfFiles<<"SADF\n";
+
 	for(i=0;i<super.numberOfFiles;i++){
-		// cout<<DirectoryTable[i].valid;
+
 		if(DirectoryTable[i].valid == 1){
-			// strcpy(list[list_index],DirectoryTable[i].fileName);
+
 			cout<<DirectoryTable[i].fileName<<"\n";
 			list_index++;
 		}

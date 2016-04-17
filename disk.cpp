@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-
 #include "disk.h"
 
 static int active = 0;
@@ -13,11 +12,6 @@ int isDiskCreated(char *name)
 {
   int f, cnt;
   char buf[BLOCK_SIZE];
-
-  if (!name) {
-    fprintf(stderr, "make_disk: invalid file name\n");
-    return -1;
-  }
 
   if ((f = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
     perror("make_disk: cannot open file");
@@ -32,11 +26,6 @@ int make_disk(char *name)
 { 
   int f, cnt;
   char buf[BLOCK_SIZE];
-
-  if (!name) {
-    fprintf(stderr, "make_disk: invalid file name\n");
-    return -1;
-  }
 
   if ((f = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
     perror("make_disk: cannot open file");
@@ -56,11 +45,6 @@ int open_disk(char *name)
 {
   int f;
 
-  if (!name) {
-    fprintf(stderr, "open_disk: invalid file name\n");
-    return -1;
-  }  
-  
   if (active) {
     fprintf(stderr, "open_disk: disk is already open\n");
     return -1;
@@ -137,6 +121,5 @@ int block_read(int block, char *buf)
     perror("block_read: failed to read");
     return -1;
   }
-
   return 0;
 }

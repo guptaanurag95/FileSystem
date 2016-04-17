@@ -29,7 +29,7 @@ struct fileDescriptor{ //range from 0 to 31
 	char fName[20];
 	char mode[2];			// r or w or rw
 	unsigned short int currentBlock;
-	char *ptr;
+	char ptr[BLOCK_SIZE];
 	char *currentptr;
 	int valid;
 };
