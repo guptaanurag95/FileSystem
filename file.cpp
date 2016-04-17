@@ -143,21 +143,22 @@ int fClose(char *name);			//returns -1 or unique fileDescriptor
 
 int fRead(int fDescriptor, char *buf, int size);			//returns 1 or 0
 int fWrite(int fDescriptor, char *buf, int size);			//returns 1 or 0
-
 int fRename(char *oldName, char *newName)		//returns 1 or 0
 {
-	for(int i=0;i<super->numberOfFiles;i++)
-		if(strcasecmp(name,DirectoryTable[i].fileName)==0)
+	int i;
+	for(i=0;i<super->numberOfFiles;i++)
+		if(strcasecmp(oldName,DirectoryTable[i].fileName)==0)
 			strcpy(DirectoryTable[i].fileName,newName);  
 	if(i<super->numberOfFiles)
 		return 1;
 	if(i>=super->numberOfFiles)
 		return 0;
 }
-int fList(char **list);				//return -1 or number of files
+int fList(char **list)			//return -1 or number of files
 {
 	int list_index = 0;
-	for(i=0,i<super->numberOfFiles;i++){
+	int i;
+	for(i=0;i<super->numberOfFiles;i++){
 		if(table[i].blockContent>=0){
 			list[list_index] = DirectoryTable[i].fileName;
 			list_index++;
@@ -167,5 +168,4 @@ int fList(char **list);				//return -1 or number of files
 		return -1;
 	else
 		return list_index;
-	}
-}		
+}	
