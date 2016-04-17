@@ -8,19 +8,25 @@ int main(){
 	intialize();
 	strcpy(temp,"temp1");
 	fCreate(temp);
-	strcpy(temp,"temp2");
-	fCreate(temp);
+
+	char per[2];
+	strcpy(per,"w");
+
+	int i = fOpen(temp,per);
+	cout<<i<<"\n";
+	char temp1[20];
+	strcpy(temp1,"tasdfasdfjkhsfemp1");
+	fWrite(i,temp1,sizeof(temp1));
+	cout<<"Closeing the file : "<<fClose(i)<<"\n";
+
+	// strcpy(per,"r");
+	// i = fOpen(temp,per);
+	// char temp2[20];
+	// fRead(i,temp2,sizeof(temp1));
+	// cout<<temp2<<"===\n";
+	// fClose(i);
 	
-	// char list[100][30];
-	// char *c_list = list[0];
-	fList();
-	char temp1[15];
-	strcpy(temp1,"temp1qwe");
-	fRename(temp,temp1);
-	cout<<"============\n";
 	fList();
 	saveTables();
-	// for(int i=0;i<len;i++)
-		// cout<<i<<" "<<list[i];
 	return 0;
 }

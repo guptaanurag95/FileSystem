@@ -70,6 +70,10 @@ int intialize(){
 
 
 int assignTables(){
+	for(int j=0;j<TOTAL_FILE_DESCRIPTOR;j++){
+		Descriptor[j].valid = 0;
+	}
+
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	open_disk(temp);
@@ -189,49 +193,118 @@ int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescripto
 		{
 			for(j=0;j<TOTAL_FILE_DESCRIPTOR;j++)
 			{
-				if(Descriptor[j].valid==1)
+				cout<<"ASDFASFDASDFR#@\n";
+				if(Descriptor[j].valid==0)
 				{
-					if(!strcasecmp("a",permissions)){
+					cout<<"ASDFASFDASDFR#@=====\n";
+					// if(!strcasecmp("a",permissions)){
 						strcpy(Descriptor[j].fName,name);
 						strcpy(Descriptor[j].mode,permissions);
 						Descriptor[j].currentBlock = DirectoryTable[i].startBlock;
 						block_read(DirectoryTable[i].startBlock,Descriptor[j].ptr);
-						Descriptor[numberofOpenFiles+1].currentptr = Descriptor[numberofOpenFiles+1].ptr;
+						Descriptor[j].currentptr = Descriptor[j].ptr;
 						Descriptor[j].valid = 1;
 						break;	
-					}
+					// }
 				}
 			}
 			break;
 		} 
-	if(j==TOTAL_FILE_DESCRIPTOR || i==super.numberOfFiles)
+	if(j>=TOTAL_FILE_DESCRIPTOR || i>=super.numberOfFiles)
 		return -1;
+	// cout<<j;
 	return j;
 }
 
 int fClose(int descriptor){			//returns -1 or 1	
 	if(Descriptor[descriptor].valid == 1){
+		block_write(Descriptor[descriptor].currentBlock, Descriptor[descriptor].ptr);
 		Descriptor[descriptor].valid = 0;
 		return 1;
 	}
 	return -1;
 }
 
-int fRead(int fDescriptor, char *buf, int size){			//returns 1 or 0
+int fRead(int descriptor, char *buf, int size){			//returns 1 or 0
+	if(Descriptor[descriptor].valid != 1 || !(Descriptor[descriptor].mode[0]=='r' || Descriptor[descriptor].mode[1]=='r'))
+		return 0;
+	
+	int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr);
+	if(sizeLeft<=size){
+		for(int i=0;i<=size;i++){
+			buf[i] = Descriptor[descriptor].currentptr[i];
+		}
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + size;
+		return 1;
+	}
+	else{
+		for(int i=0;i<=sizeLeft;i++){
+			buf[i] = Descriptor[descriptor].currentptr[i];
+		}
 
+		int temp = Descriptor[descriptor].currentBlock;
+		while(table[temp].blockContent!=-1){
+			temp = table[temp].blockContent;
+		}
+
+		int currentIndex = 0;
+		while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
+			currentIndex++;
+		}
+		if(currentIndex==DATA_BLOCKS)
+			return 0;
+		
+		table[temp].blockContent = -1;
+		Descriptor[descriptor].currentBlock = temp;
+		block_read(Descriptor[descriptor].currentBlock,Descriptor[descriptor].ptr);
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].ptr;
+		for(int i=sizeLeft+1;i<=size;i++){
+			buf[i] = Descriptor[descriptor].currentptr[i];
+		}
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft + 1);
+		return 1;
+	}
 }
 
-int fWrite(int fDescriptor, char *buf, int size){			//returns 1 or 0
-	// if((Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr + 1)<BLOCK_SIZE){
-		int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr + 1);
-		if(sizeLeft<=size){
-			strcpy(Descriptor[descriptor].currentptr,buf);
+int fWrite(int descriptor, char *buf, int size){			//returns 1 or 0
+	if(Descriptor[descriptor].valid != 1 || !(Descriptor[descriptor].mode[0]=='w' || Descriptor[descriptor].mode[1]=='w'))
+		return 0;
+
+	int sizeLeft = BLOCK_SIZE - (Descriptor[descriptor].currentptr - Descriptor[descriptor].ptr);
+	if(sizeLeft<=size){
+		strcpy(Descriptor[descriptor].currentptr,buf);
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + size;
+		return 1;
+	}
+	else{
+		for(int i=0;i<=sizeLeft;i++){
+			Descriptor[descriptor].currentptr[i] = buf[i];
 		}
-		else{
-			
+
+		block_write(Descriptor[descriptor].currentBlock, Descriptor[descriptor].ptr);
+
+		int temp = Descriptor[descriptor].currentBlock;
+		while(table[temp].blockContent!=-1){
+			temp = table[temp].blockContent;
 		}
-	// }
-	// return 0;
+
+		int currentIndex = 0;
+		while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
+			currentIndex++;
+		}
+		if(currentIndex==DATA_BLOCKS)
+			return 0;
+		
+		table[temp].blockContent = -1;
+		Descriptor[descriptor].currentBlock = temp;
+		block_read(Descriptor[descriptor].currentBlock,Descriptor[descriptor].ptr);
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].ptr;
+		for(int i=sizeLeft+1;i<=size;i++){
+			Descriptor[descriptor].currentptr[i] = buf[i];
+		}
+		Descriptor[descriptor].currentptr = Descriptor[descriptor].currentptr + (size - sizeLeft + 1);
+		return 1;
+	}
 }
 
 int fRename(char *oldName, char *newName)		//returns 1 or 0

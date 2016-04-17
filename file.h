@@ -31,7 +31,7 @@ struct fileDescriptor{ //range from 0 to 31
 	unsigned short int currentBlock;
 	char *ptr;
 	char *currentptr;
-	int valid = 0;
+	int valid;
 };
 
 int intialize();
@@ -42,7 +42,7 @@ int fCreate(char *name);			//returns 1 or 0
 int fRemove(char *name);			//returns 1 or 0
 
 int fOpen(char *name, char* permissions);			//returns -1 or unique fileDescriptor
-int fClose(char *name);			//returns -1 or unique fileDescriptor
+int fClose(int descriptor);			//returns -1 or unique fileDescriptor
 
 int fRead(int fDescriptor, char *buf, int size);			//returns 1 or 0
 int fWrite(int fDescriptor, char *buf, int size);			//returns 1 or 0
