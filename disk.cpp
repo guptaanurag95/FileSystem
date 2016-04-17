@@ -9,6 +9,25 @@
 static int active = 0;
 static int handle;
 
+int isDiskCreated(char *name)
+{
+  int f, cnt;
+  char buf[BLOCK_SIZE];
+
+  if (!name) {
+    fprintf(stderr, "make_disk: invalid file name\n");
+    return -1;
+  }
+
+  if ((f = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
+    perror("make_disk: cannot open file");
+    return -1;
+  }
+  close(f);
+  return 1;
+
+}
+
 int make_disk(char *name)
 { 
   int f, cnt;

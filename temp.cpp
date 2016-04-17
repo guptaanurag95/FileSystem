@@ -1,9 +1,6 @@
-#include <string.h>
-#include "disk.h"
+#include "file.h"
 
 int main(){
-	char temp[100];
-	strcpy(temp,"virtual_disk");
-	make_disk(temp);
+	intialize();
 	return 0;
 }
