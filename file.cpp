@@ -118,6 +118,12 @@ int fRemove(char *name){			//returns 1 or 0
 	for(int i=0;i<super->numberOfFiles;i++){
 		if(strcasecmp(name,DirectoryTable[super->numberOfFiles + i].fileName)==0){
 			DirectoryTable[super->startFatTable + i].valid = 0;
+			int startDataBlock = DirectoryTable[super->startFatTable + i].startBlock;
+			while(startDataBlock!=-1){
+				int temp = table[startDataBlock];
+				table[startDataBlock] = -2;
+				startDataBlock = temp;
+			}
 
 		}
 	}
