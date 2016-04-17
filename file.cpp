@@ -7,6 +7,7 @@ using namespace std;
 #define DISK_BLOCKS  10752
 #define BLOCK_SIZE   2048
 #define DATA_BLOCKS  10240
+#define TOTAL_FILE_DESCRIPTOR 32
 
 superBlock super;
 fatTable table[DATA_BLOCKS];
@@ -81,7 +82,7 @@ int assignTables(){
 		memset(buf, 0, BLOCK_SIZE);
 		block_read(super.startFatTable +i, buf);
 		fatTable *temp;
-		temp= table + i*(BLOCK_SIZE/sizeof(fatTable));
+		temp = table + i*(BLOCK_SIZE/sizeof(fatTable));
 		memcpy(temp, buf, BLOCK_SIZE);
 	}
 
@@ -187,25 +188,34 @@ int fOpen(char *name, char* permissions)			//returns -1 or unique fileDescriptor
 	for(i=0;i<super.numberOfFiles;i++)
 		if(strcasecmp(name,DirectoryTable[i].fileName)==0)
 		{
-			strcpy(Descriptor[numberofOpenFiles+1].fName,name);
-			strcpy(Descriptor[numberofOpenFiles+1].mode,permissions);
-			//----Append-------
-			// int blockContent = i
-			// while(blockContent!=-2){
-			// 	blockContent = fatTable[blockContent].blockContent
-			// }
-			// Descriptor[numberofOpenFiles+1].currentBlock = blockContent
-			Descriptor[numberofOpenFiles+1].currentBlock = DirectoryTable[i].startBlock;
-
-			block_read(DirectoryTable[i].startBlock,Descriptor[numberofOpenFiles+1].ptr);
-			Descriptor[numberofOpenFiles+1].currentptr = Descriptor[numberofOpenFiles+1].ptr;
-			numberofOpenFiles++;
+			int j=0;
+			for(j=0;j<TOTAL_FILE_DESCRIPTOR;j++)
+			{
+				if(Descriptor[j].valid==1)
+				{
+					if(!strcasecmp("a",permissions)){
+						strcpy(Descriptor[j].fName,name);
+						strcpy(Descriptor[j].mode,permissions);
+						Descriptor[j].currentBlock = DirectoryTable[i].startBlock;
+						block_read(DirectoryTable[i].startBlock,Descriptor[j].ptr);
+						Descriptor[numberofOpenFiles+1].currentptr = Descriptor[numberofOpenFiles+1].ptr;
+						Descriptor[j].valid = 1;
+						break;	
+					}
+				}
+			}
 			break;
 		} 
 	
 }
 
-int fClose(char *name);			//returns -1 or unique fileDescriptor
+int fClose(char *name)			//returns -1 or unique fileDescriptor
+{	
+	for(i=0;i<TOTAL_FILE_DESCRIPTOR;i++)
+		if(strcasecmp(name,Descriptor[i].fileName)==0){
+			Descriptor[i].valid = 0
+		}
+}
 
 int fRead(int fDescriptor, char *buf, int size){			//returns 1 or 0
 
