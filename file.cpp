@@ -137,7 +137,25 @@ int fRemove(char *name){			//returns 1 or 0
 }
 
 
-int fOpen(char *name, char* permissions);			//returns -1 or unique fileDescriptor
+int fOpen(char *name, char* permissions)			//returns -1 or unique fileDescriptor
+{
+	int i;
+	for(i=0;i<super->numberOfFiles;i++)
+		if(strcasecmp(name,DirectoryTable[i].fileName)==0)
+		{
+			strcpy(fileDescriptor[numberOfOpenfiles+1].fname,name);
+			strcpy(permissions,fileDescriptor[numberOfOpenfiles+1].mode);
+			//----Append-------
+			// int blockContent = i
+			// while(blockContent!=-2){
+			// 	blockContent = fatTable[blockContent].blockContent
+			// }
+			// fileDescriptor[numberOfFiles+1].currentBlock = blockContent
+			fileDescriptor[numberOfFiles+1].currentBlock = i
+			ptr = block_read(blockContent)
+		} 
+
+}
 int fClose(char *name);			//returns -1 or unique fileDescriptor
 
 
