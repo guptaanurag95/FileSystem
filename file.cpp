@@ -7,6 +7,11 @@
 #define DATA_BLOCKS  10240
 #define NUMBER_FAT__TABLE_BLOCKS (sizeof(fatTable)*DATA_BLOCKS)/BLOCK_SIZE
 
+superBlock *super;
+fatTable table[DATA_BLOCKS];
+directory DirectoryTable[DATA_BLOCKS];
+int valueAssigned = 0;
+
 int intialize(){
 	char temp[15];
 	strcpy(temp,"virtual_disk");
@@ -27,8 +32,43 @@ int intialize(){
 
 	open_disk(temp);
 	block_write(0,(char *)&super);
-	block_write(super.startFatTable,(char *)table);
+	for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(fatTable)); ++i)
+	{
+		block_write(super.startFatTable+i,(char *)(table+i*(BLOCK_SIZE/sizeof(fatTable)));
+	}
+	close_disk(temp);
 	return 1;
+}
+
+int assigneTables(){
+	char buf[2050];
+	block_read(0,buf);
+	super = (superBlock *) buf;
+	
+	for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(fatTable)); ++i){
+		block_read(super->startFatTable +i, buf);
+		table + i*(BLOCK_SIZE/sizeof(fatTable)) = (fatTable *)buf;
+	}
+	valueAssigned = 1;
+}
+
+int fCreate(char *name){			//returns 1 or 0
+	char temp[15];
+	strcpy(temp,"virtual_disk");
+	close_disk(temp);
+	if(isDiskCreated(temp)==-1)
+		intialize();
+	if(valueAssigned==0)
+		assigneTables();
+
+	int currentIndex = 0;
+	while(currentIndex<DATA_BLOCKS && table[currentIndex].blockContent!=-2){
+		currentIndex++;
+	}
+	if(currentIndex==DATA_BLOCKS)
+		return -1;
+	table[currentIndex].blockContent=-1;
+	
 }
 
 int fCreate(char *name){			//returns 1 or 0

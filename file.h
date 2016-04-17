@@ -41,7 +41,6 @@ int fRemove(char *name);			//returns 1 or 0
 int fOpen(char *name, char* permissions);			//returns -1 or unique fileDescriptor
 int fClose(char *name);			//returns -1 or unique fileDescriptor
 
-
 int fRead(int fDescriptor, char *buf, int size);			//returns 1 or 0
 int fWrite(int fDescriptor, char *buf, int size);			//returns 1 or 0
 
