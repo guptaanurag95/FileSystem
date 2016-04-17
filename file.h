@@ -25,8 +25,7 @@ struct directory{
 	int valid;
 };
 
-struct fileDescriptor{
-	int fDescriptor;					//between 0 and 31
+struct fileDescriptor{ //range from 0 to 31
 	char fName[20];
 	char mode[2];			// r or w or rw
 	unsigned short int currentBlock;

@@ -20,6 +20,7 @@ int intialize(){
 	strcpy(temp,"virtual_disk");
 	// close_disk();
 
+	cout<<"SDF";
 	make_disk(temp);
 
 	superBlock super;
@@ -53,6 +54,7 @@ int intialize(){
 
 
 int assignTables(){
+	cout<<"12432";
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	open_disk(temp);
@@ -69,6 +71,7 @@ int assignTables(){
 		memcpy(temp, buf, BLOCK_SIZE);
 	}
 
+	cout<<"\nSDF"<<super.numberOfFiles<<"\n";
 	if(super.numberOfFiles != 0){
 		for (int i = 0; i < DATA_BLOCKS/(BLOCK_SIZE/sizeof(directory)); ++i){
 			
@@ -88,6 +91,7 @@ int assignTables(){
 
 
 int saveTables(){
+	cout<<"1243254as\n";
 	char buf[BLOCK_SIZE];
 	memset(buf, 0, BLOCK_SIZE);
 	memcpy(buf, &super, BLOCK_SIZE);
@@ -161,26 +165,31 @@ int fRemove(char *name){			//returns 1 or 0
 				table[startDataBlock].blockContent = -2;
 				startDataBlock = temp;
 			}
+			break;
 		}
 	}
 }
 
-int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescriptor
-	char temp[15];
-	strcpy(temp,"virtual_disk");
-	close_disk();
-	//if(isDiskCreated(temp)==-1)
-//		intialize();
+int fOpen(char *name, char* permissions)			//returns -1 or unique fileDescriptor
+{
+	int i;
+	for(i=0;i<super.numberOfFiles;i++)
+		if(strcasecmp(name,DirectoryTable[i].fileName)==0)
+		{
+			strcpy(Descriptor[numberofOpenFiles+1].fName,name);
+			strcpy(Descriptor[numberofOpenFiles+1].mode,permissions);
+			//----Append-------
+			// int blockContent = i
+			// while(blockContent!=-2){
+			// 	blockContent = fatTable[blockContent].blockContent
+			// }
+			// Descriptor[numberofOpenFiles+1].currentBlock = blockContent
+			Descriptor[numberofOpenFiles+1].currentBlock = DirectoryTable[i].startBlock;
 
-	open_disk(temp);
-	if(valueAssigned==0)
-		assignTables();
+			block_read(DirectoryTable[i].startBlock,Descriptor[numberofOpenFiles+1].ptr);
+			numberofOpenFiles++;
+		} 
 
-	for(int i=0;i<super.numberOfFiles;i++){
-		if(strcasecmp(name,DirectoryTable[i].fileName)==0){
-			break;
-		}
-	}
 }
 
 int fClose(char *name);			//returns -1 or unique fileDescriptor
@@ -207,11 +216,11 @@ int fList()				//return -1 or number of files
 	// cout<<super.numberOfFiles<<"SADF\n";
 	for(i=0;i<super.numberOfFiles;i++){
 		// cout<<DirectoryTable[i].valid;
-		if(DirectoryTable[i].valid == 1){
+		// if(DirectoryTable[i].valid == 1){
 			// strcpy(list[list_index],DirectoryTable[i].fileName);
 			cout<<DirectoryTable[i].fileName<<"\n";
 			list_index++;
-		}
+		// }
 	}
 	if(list_index==0)
 		return -1;

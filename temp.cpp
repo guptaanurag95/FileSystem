@@ -6,9 +6,9 @@ using namespace std;
 int main(){
 	char temp[15];
 	// intialize();
-	strcpy(temp,"tempwrew1");
+	strcpy(temp,"tasdemp1asdf");
 	fCreate(temp);
-	strcpy(temp,"tempfsdv2");
+	strcpy(temp,"tempsadf2sdf");
 	fCreate(temp);
 	
 	// char list[100][30];
