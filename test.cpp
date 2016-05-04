@@ -6,14 +6,19 @@ using namespace std;
 int main(){
 	char temp[15];
 	char per[2];
+
+	// fFormat();
 		
 	cout<<"Creating file with name File1, File2, File3.\n";
 	strcpy(temp,"File1");
-	fCreate(temp);
+	if(fCreate(temp)==0)
+		cout<<"File 1 is already present.\n";
 	strcpy(temp,"File2");
-	fCreate(temp);
+	if(fCreate(temp)==0)
+		cout<<"File 2 is already present.\n";
 	strcpy(temp,"File3");
-	fCreate(temp);
+	if(fCreate(temp)==0)
+		cout<<"File 3 is already present.\n";
 
 	cout<<"\n\n\nListing all file:\n";
 	fList();

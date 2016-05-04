@@ -16,7 +16,7 @@ fileDescriptor Descriptor[33];
 int numberofOpenFiles = 0;
 int valueAssigned = 0;
 
-int intialize(){
+int fFormat(){
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 
@@ -129,7 +129,7 @@ int fCreate(char *name){			//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	if(isDiskCreated(temp)==-1)
-		intialize();
+		fFormat();
 	close_disk();
 
 	open_disk(temp);
@@ -172,7 +172,7 @@ int fRemove(char *name){			//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	if(isDiskCreated(temp)==-1)
-		intialize();
+		fFormat();
 	close_disk();
 
 	open_disk(temp);
@@ -201,7 +201,7 @@ int fOpen(char *name, char* permissions){			//returns -1 or unique fileDescripto
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	if(isDiskCreated(temp)==-1)
-		intialize();
+		fFormat();
 	close_disk();
 
 	open_disk(temp);
@@ -344,7 +344,7 @@ int fRename(char *oldName, char *newName)		//returns 1 or 0
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	if(isDiskCreated(temp)==-1)
-		intialize();
+		fFormat();
 	close_disk();
 
 	open_disk(temp);
@@ -379,7 +379,7 @@ int fList()				//return -1 or number of files
 	char temp[15];
 	strcpy(temp,"virtual_disk");
 	if(isDiskCreated(temp)==-1)
-		intialize();
+		fFormat();
 	close_disk();
 
 	open_disk(temp);

@@ -34,7 +34,7 @@ struct fileDescriptor{ //range from 0 to 31
 	int valid;
 };
 
-int intialize();
+int fFormat();
 int assignTables();
 int saveTables();
 
